@@ -1,0 +1,260 @@
+[
+  {
+    "id": 1012454,
+    "created_at": "2026-08-04 09:56:20",
+    "updated_at": "2026-09-24 09:00:20",
+    "name": "United States #12941",
+    "station": "187.15.89.138",
+    "ipv6_station": "",
+    "hostname": "us12941.nordvpn.com",
+    "load": 7,
+    "status": "online",
+    "locations": [
+      {
+        "id": 291,
+        "created_at": "2017-06-15 14:06:47",
+        "updated_at": "2017-06-15 14:06:47",
+        "latitude": 47.6063889,
+        "longitude": -122.3308333,
+        "country": {
+          "id": 228,
+          "name": "United States",
+          "code": "US",
+          "subdivision": {
+            "id": 88,
+            "name": "Washington",
+            "code": "WA"
+          },
+          "city": {
+            "id": 9128402,
+            "identifier": "us_seattle",
+            "name": "Seattle",
+            "latitude": 47.6063889,
+            "longitude": -122.3308333,
+            "dns_name": "seattle",
+            "hub_score": 0
+          }
+        }
+      }
+    ],
+    "services": [
+      {
+        "id": 1,
+        "name": "VPN",
+        "identifier": "vpn",
+        "created_at": "2017-03-21 12:00:45",
+        "updated_at": "2017-05-25 13:13:31"
+      },
+      {
+        "id": 5,
+        "name": "Proxy",
+        "identifier": "proxy",
+        "created_at": "2017-05-29 19:38:30",
+        "updated_at": "2017-05-29 19:39:30"
+      }
+    ],
+    "technologies": [
+      {
+        "id": 1,
+        "name": "IKEv2/IPSec",
+        "identifier": "ikev2",
+        "created_at": "2017-03-21 12:00:24",
+        "updated_at": "2017-09-05 14:20:16",
+        "metadata": [],
+        "pivot": {
+          "technology_id": 1,
+          "server_id": 1012454,
+          "status": "online"
+        }
+      },
+      {
+        "id": 3,
+        "name": "OpenVPN UDP",
+        "identifier": "openvpn_udp",
+        "created_at": "2017-05-04 08:03:24",
+        "updated_at": "2017-05-09 19:27:37",
+        "metadata": [],
+        "pivot": {
+          "technology_id": 3,
+          "server_id": 1012454,
+          "status": "online"
+        }
+      },
+      {
+        "id": 5,
+        "name": "OpenVPN TCP",
+        "identifier": "openvpn_tcp",
+        "created_at": "2017-05-09 19:28:14",
+        "updated_at": "2017-05-09 19:28:14",
+        "metadata": [],
+        "pivot": {
+          "technology_id": 5,
+          "server_id": 1012454,
+          "status": "online"
+        }
+      },
+      {
+        "id": 21,
+        "name": "HTTP Proxy (SSL)",
+        "identifier": "proxy_ssl",
+        "created_at": "2017-10-02 12:45:14",
+        "updated_at": "2017-10-02 12:45:14",
+        "metadata": [
+          {
+            "name": "proxy_hostname",
+            "value": "us12941.proxy.nordvpn.com"
+          }
+        ],
+        "pivot": {
+          "technology_id": 21,
+          "server_id": 1012454,
+          "status": "online"
+        }
+      },
+      {
+        "id": 23,
+        "name": "HTTP CyberSec Proxy (SSL)",
+        "identifier": "proxy_ssl_cybersec",
+        "created_at": "2017-10-02 12:50:49",
+        "updated_at": "2017-10-02 12:50:49",
+        "metadata": [
+          {
+            "name": "proxy_hostname",
+            "value": "us12941.proxy.nordvpn.com"
+          }
+        ],
+        "pivot": {
+          "technology_id": 23,
+          "server_id": 1012454,
+          "status": "online"
+        }
+      },
+      {
+        "id": 35,
+        "name": "Wireguard",
+        "identifier": "wireguard_udp",
+        "created_at": "2019-02-14 14:08:43",
+        "updated_at": "2019-02-14 14:08:43",
+        "metadata": [
+          {
+            "name": "public_key",
+            "value": "1GaNB9RbeGNzekcuRDcxTXvqtXWFe2K9GtUd+EjNuyI="
+          }
+        ],
+        "pivot": {
+          "technology_id": 35,
+          "server_id": 1012454,
+          "status": "online"
+        }
+      },
+      {
+        "id": 51,
+        "name": "NordWhisper",
+        "identifier": "nordwhisper",
+        "created_at": "2024-10-07 10:17:17",
+        "updated_at": "2024-10-07 10:17:17",
+        "metadata": [
+          {
+            "name": "port",
+            "value": "443"
+          }
+        ],
+        "pivot": {
+          "technology_id": 51,
+          "server_id": 1012454,
+          "status": "online"
+        }
+      },
+      {
+        "id": 56,
+        "name": "NordWhisper UDP",
+        "identifier": "nordwhisper_udp",
+        "created_at": "2026-03-20 14:24:49",
+        "updated_at": "2026-03-20 14:24:49",
+        "metadata": [
+          {
+            "name": "port",
+            "value": "443"
+          }
+        ],
+        "pivot": {
+          "technology_id": 56,
+          "server_id": 1012454,
+          "status": "online"
+        }
+      }
+    ],
+    "groups": [
+      {
+        "id": 11,
+        "created_at": "2017-06-13 13:43:00",
+        "updated_at": "2017-06-13 13:43:00",
+        "title": "Standard VPN servers",
+        "identifier": "legacy_standard",
+        "type": {
+          "id": 3,
+          "created_at": "2017-06-13 13:40:17",
+          "updated_at": "2017-06-13 13:40:23",
+          "title": "Legacy category",
+          "identifier": "legacy_group_category"
+        }
+      },
+      {
+        "id": 15,
+        "created_at": "2017-06-13 13:43:38",
+        "updated_at": "2017-06-13 13:43:38",
+        "title": "P2P",
+        "identifier": "legacy_p2p",
+        "type": {
+          "id": 3,
+          "created_at": "2017-06-13 13:40:17",
+          "updated_at": "2017-06-13 13:40:23",
+          "title": "Legacy category",
+          "identifier": "legacy_group_category"
+        }
+      },
+      {
+        "id": 21,
+        "created_at": "2017-10-27 14:23:03",
+        "updated_at": "2017-10-30 08:09:48",
+        "title": "The Americas",
+        "identifier": "the_americas",
+        "type": {
+          "id": 5,
+          "created_at": "2017-10-27 14:16:30",
+          "updated_at": "2017-10-27 14:16:30",
+          "title": "Regions",
+          "identifier": "regions"
+        }
+      }
+    ],
+    "specifications": [
+      {
+        "id": 8,
+        "title": "Version",
+        "identifier": "version",
+        "values": [
+          {
+            "id": 257,
+            "value": "2.1.0"
+          }
+        ]
+      }
+    ],
+    "ips": [
+      {
+        "id": 2782242,
+        "created_at": "2026-08-04 09:56:20",
+        "updated_at": "2026-08-04 09:56:20",
+        "server_id": 1012454,
+        "ip_id": 48862038,
+        "type": "entry",
+        "ip": {
+          "id": 48862038,
+          "ip": "187.15.89.138",
+          "version": 4
+        }
+      }
+    ]
+  }
+]

@@ -1,9 +1,0 @@
-[Unit]
-Description=The NordVPN Deamon
-After=network.target
-
-[Service]
-ExecStart = /opt/nordvpn/bin/vpn_deamon.py
-
-[Install]
-WantedBy=multi-user.target

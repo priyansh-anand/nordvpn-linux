@@ -1,0 +1,77 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nordvpn-linux"
+dynamic = ["version"]
+description = "Unofficial, security-focused NordVPN client for Linux built on OpenVPN"
+readme = "README.md"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "Priyansh Anand", email = "pr1y4nsh@protonmail.com" }]
+dependencies = []
+classifiers = [
+  "Environment :: Console",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: System :: Networking",
+  "Private :: Do Not Upload",
+]
+
+[project.urls]
+Homepage = "https://github.com/priyansh-anand/nordvpn-linux"
+
+[project.scripts]
+nordvpn = "nordvpn_linux.cli.main:main"
+nordvpnd = "nordvpn_linux.daemon.main:main"
+
+[dependency-groups]
+dev = [
+  "mypy>=1.13",
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "pytest-cov>=6.0",
+  "ruff>=0.8",
+]
+
+[tool.hatch.version]
+path = "src/nordvpn_linux/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nordvpn_linux"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# The plan/spec contain example code blocks; ruff >= 0.15 would format them.
+extend-exclude = ["docs"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "S", "RUF", "PTH", "RET", "ASYNC"]
+# ASYNC109 wants trio-style cancel scopes instead of `timeout` parameters; this
+# codebase deliberately passes timeouts to its async APIs.
+ignore = ["ASYNC109"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S104", "S105", "S106", "S108", "S603", "S607"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src", "tests"]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/src:$MYPY_CONFIG_FILE_DIR/tests"
+explicit_package_bases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+addopts = ["-ra", "--strict-markers", "--import-mode=importlib", "-m", "not e2e"]
+markers = ["e2e: end-to-end tests in Docker (run with: make e2e)"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+branch = true
+source = ["nordvpn_linux"]

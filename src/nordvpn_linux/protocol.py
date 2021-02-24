@@ -121,7 +121,7 @@ def decode_request(line: bytes) -> Request:
     obj = _load(line)
     request_id = _message_id(obj)
     try:
-        cmd = Command(obj.get("cmd"))
+        cmd = Command(obj.get("cmd", ""))
     except ValueError:
         raise _bad(f"unknown command {obj.get('cmd')!r}") from None
     args = obj.get("args", {})
@@ -147,7 +147,7 @@ def decode_reply(line: bytes) -> Response | Event:
         if not isinstance(error, dict):
             raise _bad("'error' must be an object")
         try:
-            code = ErrorCode(error.get("code"))
+            code = ErrorCode(error.get("code", ""))
         except ValueError:
             code = ErrorCode.INTERNAL
         return Response.failure(reply_id, code, str(error.get("message", "")))

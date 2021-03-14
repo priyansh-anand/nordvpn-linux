@@ -106,6 +106,9 @@ class VPN:
             sock.close()
 
             return resp
+        except KeyboardInterrupt:
+            self._disconnect()
+            return "CANCELLED"
         except:
             return "DEAMON_DOWN"
 
@@ -187,6 +190,8 @@ class VPN:
             print("[!] Runtime error in NordVPN Deamon")
         elif resp == "DEAMON_DOWN":
             print("[!] NordVPN Deamon is not running")
+        elif resp == "CANCELLED":
+            print("[*] Stopped connecting to NordVPN")
         else:
             print("[!] Unexpected deamon error")
 
@@ -198,6 +203,10 @@ class VPN:
 
         try:
             resp = requests.get(Utils.LOCATION_API)
+        except KeyboardInterrupt:
+            spinner.stop(clean=True)
+            print("[*] Stopped connecting to NordVPN")
+            sys.exit()
         except:
             print("[!] Cannot fetch {}".format(Utils.LOCATION_API))
             resp = None
@@ -274,25 +283,18 @@ class VPN:
                     self.connect(server_prefix)
                 else:
                     self.connect_auto()
-
             elif command == "d" or command == "disconnect":
                 self.disconnect()
-
             elif command == "s" or command == "status":
                 self.status()
-
             elif command == "sync-ovpn":
                 self.sync_ovpn_conf()
-
             elif command == "login":
                 self.login()
-
             elif command == "logout":
                 self.logout()
-
             elif command == "help":
                 self.help()
-
             else:
                 print("[!] Invalid command")
                 print("    > Try 'nvpn help'")

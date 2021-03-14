@@ -4,9 +4,10 @@ import logging
 import os
 import signal
 import socket
-import sys
 from configparser import ConfigParser
 from subprocess import PIPE, STDOUT, Popen
+from sys import exit
+from threading import Thread
 
 DEAMON_CONFIG_FILE = "/opt/nvpn/config/nordvpnd.conf"
 
@@ -48,10 +49,10 @@ class VPNDeamon:
             self.vpn = Popen(["openvpn", conf], stdout=PIPE, stderr=STDOUT, stdin=PIPE)
             if self.vpn is None:
                 logging.error("openvpn process is None")
-                sys.exit()
+                exit()
         except Exception as ex:
             logging.error("{} - Cannot create openvpn process".format(ex), exc_info=True)
-            sys.exit()
+            exit()
 
     def connect(self, conf: str, server_name: str) -> str:
         # Setup the openvpn process first
@@ -85,6 +86,42 @@ class VPNDeamon:
         except:
             return "DEAMON_ERROR"
 
+    def ipc_connection(self, conn: socket.socket) -> None:
+        # function to handle IPC Commandss (Inter-process Communication)
+        try:
+            while True:
+                # Receive message from the client
+                msg = conn.recv(1024).decode("UTF-8")
+                if not msg:
+                    break
+                logging.debug("<msg received>: {}".format(msg))
+
+                # Process message sent by client
+                if msg.startswith("CONNECT"):
+                    _, conf, server_name = msg.split(" ")
+                    ret_code = self.connect(conf, server_name).encode("UTF-8")
+                    conn.send(ret_code)
+
+                    logging.debug("<msg sent>: {}".format(ret_code.decode("UTF-8")))
+
+                elif msg.startswith("DISCONNECT"):
+                    ret_code = self.disconnect().encode("UTF-8")
+                    conn.send(ret_code)
+
+                    logging.debug("<msg sent>: {}".format(ret_code.decode("UTF-8")))
+
+                elif msg.startswith("STATUS"):
+                    conn.send(self.status.encode("UTF-8"))
+                    logging.debug("<msg sent>: {}".format(self.status.encode("UTF-8")))
+
+                else:
+                    conn.send(b"NOT_IMPLEMENTED")
+
+        except Exception as ex:
+            logging.error("{}".format(ex), exc_info=True)
+        finally:
+            conn.close()
+
     def ipc(self) -> None:
         # function for IPC (Inter-process Communication)
         logging.debug("[*] VPN-Deamon started")
@@ -94,39 +131,10 @@ class VPNDeamon:
         while True:
             # Accept any incoming connection
             conn, _ = self.socket.accept()
-            try:
-                while True:
-                    # Receive message from the client
-                    msg = conn.recv(1024).decode("UTF-8")
-                    if not msg:
-                        break
-                    logging.debug("<msg received>: {}".format(msg))
 
-                    # Process message sent by client
-                    if msg.startswith("CONNECT"):
-                        _, conf, server_name = msg.split(" ")
-                        ret_code = self.connect(conf, server_name).encode("UTF-8")
-                        conn.send(ret_code)
-
-                        logging.debug("<msg sent>: {}".format(ret_code.decode("UTF-8")))
-
-                    elif msg.startswith("DISCONNECT"):
-                        ret_code = self.disconnect().encode("UTF-8")
-                        conn.send(ret_code)
-
-                        logging.debug("<msg sent>: {}".format(ret_code.decode("UTF-8")))
-
-                    elif msg.startswith("STATUS"):
-                        conn.send(self.status.encode("UTF-8"))
-                        logging.debug("<msg sent>: {}".format(self.status.encode("UTF-8")))
-
-                    else:
-                        conn.send(b"NOT_IMPLEMENTED")
-
-            except Exception as ex:
-                logging.error("{}".format(ex), exc_info=True)
-            finally:
-                conn.close()
+            # Create a new thread and run the ipc_connection function
+            ipc_conn = Thread(target=self.ipc_connection, args=(conn,))
+            ipc_conn.start()
 
     def __del__(self) -> None:
         # This function will be called when this instance will be deleted
@@ -140,7 +148,7 @@ def kill_self(signal_num, frame):
     global vpn
     del vpn
 
-    sys.exit()
+    exit()
 
 
 def main():

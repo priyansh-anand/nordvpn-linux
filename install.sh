@@ -1,30 +1,31 @@
 echo "[*] Installing NordVPN Linux Client [Unofficial]"
 {
-    echo "[*] Copying python scripts to /opt/nvpn/bin"
-    sudo mkdir -p /opt/nvpn/bin &&
-    sudo cp $(dirname $0)/src/*.py /opt/nvpn/bin &&
-    sudo chmod +x /opt/nvpn/bin/* &&
+    echo "[*] Copying python scripts to /opt/nordvpn/bin"
+    sudo mkdir -p /opt/nordvpn/bin &&
+    sudo cp $(dirname $0)/src/*.py /opt/nordvpn/bin &&
+    sudo chmod +x /opt/nordvpn/bin/* &&
 
     echo "[+] Installing required python packages" &&
     pip3 install -r $(dirname $0)/src/requirements.txt &&
 
-    echo "[*] Copying configuration files to /opt/nvpn/config" &&
-    sudo mkdir -p /opt/nvpn/config &&
-    sudo cp $(dirname $0)/config/*.conf /opt/nvpn/config &&
+    echo "[*] Copying configuration files to /opt/nordvpn/config" &&
+    sudo mkdir -p /opt/nordvpn/config &&
+    sudo cp $(dirname $0)/config/*.conf /opt/nordvpn/config &&
 
-    echo "[+] Creating login file at /opt/nvpn/login" &&
-    sudo touch /opt/nvpn/login &&
+    echo "[+] Creating login file at /opt/nordvpn/login" &&
+    sudo touch /opt/nordvpn/login &&
 
     echo "[*] Settings permissions for directories" &&
-    sudo chmod -R 777 /opt/nvpn && sudo chmod 755 /opt/nvpn/config/nordvpnd.conf &&
+    sudo chmod -R 777 /opt/nordvpn && sudo chmod 755 /opt/nordvpn/config/nordvpnd.conf &&
 
-    echo "[+] Installing and enabling nvpn-deamon.service" &&
-    sudo cp $(dirname $0)/src/nvpn-deamon.service /etc/systemd/system &&
-    sudo systemctl enable nvpn-deamon.service &&
-    sudo systemctl restart nvpn-deamon.service &&
+    echo "[+] Installing and enabling nordvpn-deamon.service" &&
+    sudo cp $(dirname $0)/src/nordvpn-deamon.service /etc/systemd/system &&
+    sudo systemctl enable nordvpn-deamon.service &&
+    sudo systemctl restart nordvpn-deamon.service &&
 
-    echo "[+] Adding nvpn to path" &&
-    sudo ln -sf /opt/nvpn/bin/vpn.py /bin/nvpn &&
+    echo "[+] Adding nordvpn to path" &&
+    sudo ln -sf /opt/nordvpn/bin/vpn.py /bin/nvpn &&
+    sudo ln -sf /opt/nordvpn/bin/vpn.py /bin/nordvpn &&
 
     echo "[+] NordVPN Linux Client successfully installed"
 } || {

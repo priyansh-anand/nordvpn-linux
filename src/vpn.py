@@ -12,9 +12,9 @@ from getpass import getpass
 import progress_py
 import requests
 
-CREDS_FILE = "/opt/nvpn/login"
-CONFIG_FILE = "/opt/nvpn/config/nordvpn.conf"
-DEAMON_CONFIG_FILE = "/opt/nvpn/config/nordvpnd.conf"
+CREDS_FILE = "/opt/nordvpn/login"
+CONFIG_FILE = "/opt/nordvpn/config/nordvpn.conf"
+DEAMON_CONFIG_FILE = "/opt/nordvpn/config/nordvpnd.conf"
 
 
 class Utils:
@@ -125,7 +125,7 @@ class VPN:
         try:
             if self.config["DEFAULT"]["CREDS_FILE"] == "/dev/null":
                 print("[!] You're not logged in")
-                print("    > Try 'nvpn login' to login to NordVPN")
+                print("    > Try 'nordvpn login' to login to NordVPN")
                 sys.exit(0)
 
             mode = "udp"
@@ -148,12 +148,12 @@ class VPN:
         except FileNotFoundError:
             print("[!] NordVPN .ovpn config files not found")
             print("    > Check the directory: {}".format(self.config["CONF"]["CONF_DIR"]))
-            print("    > Hint: Try using 'nvpn sync-ovpn' to sync the NordVPN .ovpn files to this directory")
+            print("    > Hint: Try using 'nordvpn sync-ovpn' to sync the NordVPN .ovpn files to this directory")
             sys.exit(0)
         except IndexError:
             print("[!] No server .ovpn file found with prefix: {}".format(server_prefix))
             print("    > Check the directory: {}".format(self.config["CONF"]["CONF_DIR"]))
-            print("    > Hint: Try using 'nvpn sync-ovpn' to sync the NordVPN .ovpn files to this directory")
+            print("    > Hint: Try using 'nordvpn sync-ovpn' to sync the NordVPN .ovpn files to this directory")
             sys.exit(0)
 
         spinner = progress_py.Spinner("Connecting to Nordvpn [{}]".format(server_name))
@@ -183,7 +183,7 @@ class VPN:
         spinner.stop(clean=True)
 
         if resp == "SUCCESS":
-            print("[*] Connected to NordVPN[{}]".format(server_name))
+            print("[+] Connected to NordVPN[{}]".format(server_name))
         elif resp == "AUTH_ERROR":
             print("[!] Invalid credentials for NordVPN")
         elif resp == "DEAMON_ERROR":
@@ -193,7 +193,7 @@ class VPN:
         elif resp == "CANCELLED":
             print("[*] Stopped connecting to NordVPN")
         else:
-            print("[!] Unexpected deamon error")
+            print("[!] Unexpected NordVPN Deamon error")
 
     def connect_auto(self) -> None:
         self._disconnect()
@@ -231,7 +231,7 @@ class VPN:
 
         spinner.stop(clean=True)
         if resp == "SUCCESS":
-            print("[*] Disconnected from NordVPN")
+            print("[+] Disconnected from NordVPN")
         else:
             print("[!] Cannot disconnect from NordVPN")
 
@@ -259,9 +259,10 @@ class VPN:
             with open(CONFIG_FILE, "w+") as f:
                 self.config.write(f)
 
+            print("[+] Saved login information, you can connect to NordVPN now")
         except:
             print("[!] Cannot login to NordVPN")
-            print("    > Cannot write to the directory /opt/nvpn | Check permissions")
+            print("    > Cannot write to the directory /opt/nordvpn | Check permissions")
 
     def logout(self) -> None:
         try:
@@ -269,9 +270,11 @@ class VPN:
             with open(CONFIG_FILE, "w+") as f:
                 self.config.write(f)
                 f.close()
+
+            print("[+] Logged out from NordVPN")
         except:
             print("[!] Cannot logout from NordVPN")
-            print("    > Cannot write to the directory /opt/nvpn | Check permissions")
+            print("    > Cannot write to the directory /opt/nordvpn | Check permissions")
 
     def cli(self) -> None:
         if len(sys.argv) > 1:
@@ -297,12 +300,12 @@ class VPN:
                 self.help()
             else:
                 print("[!] Invalid command")
-                print("    > Try 'nvpn help'")
+                print("    > Try 'nordvpn help'")
         else:
             self.help()
 
     def help(self) -> None:
-        print("[*] NordVpn Linux client")
+        print("[*] NordVpn Linux client [nordvpn/nvpn]")
         print("[+] Commands:")
         print("\tlogin \t\t\t\tLogs you in")
         print("\tlogout\t\t\t\tLogs you out")

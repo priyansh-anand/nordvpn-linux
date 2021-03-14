@@ -1,13 +1,13 @@
 echo "[*] Uninstalling NordVPN Linux Client [Unofficial]"
 {
-    echo "[*] Removing /opt/nvpn/bin"
-    sudo rm -r /opt/nvpn
+    echo "[*] Removing /opt/nordvpn/bin"
+    sudo rm -r /opt/nordvpn
 
-    echo "[+] Removing nvpn from path"
-    sudo rm /bin/nvpn
+    echo "[+] Removing nordvpn from path"
+    sudo rm /bin/nordvpn
 
-    echo "[+] Disabling and removing nvpn-deamon.service"
-    sudo systemctl stop nvpn-deamon.service && sudo systemctl disable nvpn-deamon.service && sudo rm /etc/systemd/system/nvpn-deamon.service
+    echo "[+] Disabling and removing nordvpn-deamon.service"
+    sudo systemctl stop nordvpn-deamon.service && sudo systemctl disable nordvpn-deamon.service && sudo rm /etc/systemd/system/nordvpn-deamon.service
 
     echo "[+] NordVPN Linux Client successfully uninstalled"
 } || {

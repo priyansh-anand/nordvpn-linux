@@ -9,7 +9,7 @@ from subprocess import PIPE, STDOUT, Popen
 from sys import exit
 from threading import Thread
 
-DEAMON_CONFIG_FILE = "/opt/nvpn/config/nordvpnd.conf"
+DEAMON_CONFIG_FILE = "/opt/nordvpn/config/nordvpnd.conf"
 
 
 class VPNDeamon:

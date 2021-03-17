@@ -16,7 +16,10 @@ echo "[*] Installing NordVPN Linux Client [Unofficial]"
     sudo touch /opt/nordvpn/login &&
 
     echo "[*] Settings permissions for directories" &&
-    sudo chmod -R 777 /opt/nordvpn && sudo chmod 755 /opt/nordvpn/config/nordvpnd.conf &&
+    sudo chmod 777 /opt/nordvpn &&
+    sudo chmod 666 /opt/nordvpn/login &&
+    sudo chmod 666 /opt/nordvpn/config/nordvpn.conf &&
+    sudo chmod 644 /opt/nordvpn/config/nordvpnd.conf &&
 
     echo "[+] Installing and enabling nordvpn-deamon.service" &&
     sudo cp $(dirname $0)/misc/nordvpn-deamon.service /etc/systemd/system &&

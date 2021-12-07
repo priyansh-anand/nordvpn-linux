@@ -55,7 +55,7 @@ select = ["E", "W", "F", "I", "UP", "B", "SIM", "S", "RUF", "PTH", "RET", "ASYNC
 ignore = ["ASYNC109"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S104", "S105", "S106", "S108", "S603", "S607"]
+"tests/**" = ["S101", "S104", "S105", "S106", "S107", "S108", "S603", "S607"]
 
 [tool.mypy]
 python_version = "3.11"

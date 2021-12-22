@@ -106,3 +106,15 @@ async def eventually(predicate: Callable[[], bool], timeout: float = 5.0) -> Non
         if loop.time() > deadline:
             raise AssertionError(f"condition not met within {timeout}s")
         await asyncio.sleep(0.02)
+
+
+class FakeRunner:
+    """A dns ``Runner`` that records commands and returns exit codes keyed by argv[1]."""
+
+    def __init__(self, codes: Mapping[str, int] | None = None) -> None:
+        self.codes = dict(codes or {})
+        self.calls: list[list[str]] = []
+
+    async def __call__(self, argv: list[str]) -> int:
+        self.calls.append(argv)
+        return self.codes.get(argv[1] if len(argv) > 1 else "", 0)

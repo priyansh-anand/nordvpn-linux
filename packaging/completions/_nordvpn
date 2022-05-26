@@ -1,0 +1,48 @@
+#compdef nordvpn
+# SPDX-License-Identifier: GPL-3.0-only
+# Zsh completion for nordvpn.
+
+_nordvpn() {
+  local -a commands
+  commands=(
+    'login:save your NordVPN service credentials'
+    'logout:disconnect and forget the saved credentials'
+    'connect:connect to NordVPN'
+    'c:connect to NordVPN'
+    'disconnect:disconnect from NordVPN'
+    'd:disconnect from NordVPN'
+    'status:show the connection status'
+    's:show the connection status'
+    'countries:list the countries you can connect to'
+    'settings:show the current settings'
+    'set:change a setting'
+  )
+  if (( CURRENT == 2 )); then
+    _describe -t commands 'nordvpn command' commands
+    return
+  fi
+  case $words[2] in
+    connect|c)
+      if (( CURRENT == 3 )); then
+        local -a codes
+        codes=(${(f)"$(nordvpn countries --plain 2>/dev/null)"})
+        compadd -a codes
+      fi
+      ;;
+    status|s|settings) compadd -- --json ;;
+    countries) compadd -- --json --plain ;;
+    login) compadd -- --username --password-stdin ;;
+    set)
+      if (( CURRENT == 3 )); then
+        compadd protocol dns
+      elif (( CURRENT == 4 )); then
+        case $words[3] in
+          protocol) compadd udp tcp ;;
+          dns) compadd on off ;;
+        esac
+      fi
+      ;;
+  esac
+}
+
+_nordvpn "$@"

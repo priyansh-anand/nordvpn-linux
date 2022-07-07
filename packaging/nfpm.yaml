@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Built by `make packages` from files staged by `make install-files DESTDIR=build/root`.
+name: nordvpn-linux
+arch: all
+platform: linux
+version: ${VERSION}
+release: 1
+section: net
+priority: optional
+maintainer: Priyansh Anand <pr1y4nsh@protonmail.com>
+description: Unofficial, security-focused NordVPN client for Linux built on OpenVPN.
+homepage: https://github.com/priyansh-anand/nordvpn-linux
+license: GPL-3.0-only
+depends:
+  - python3 (>= 3.11)
+  - openvpn
+  - systemd
+recommends:
+  - systemd-resolved
+overrides:
+  rpm:
+    depends:
+      - python3 >= 3.11
+      - openvpn
+      - systemd
+  archlinux:
+    depends:
+      - python>=3.11
+      - openvpn
+      - systemd
+contents:
+  - src: build/root/usr/lib/nordvpn/nordvpn.pyz
+    dst: /usr/lib/nordvpn/nordvpn.pyz
+  - src: build/root/usr/bin/nordvpn
+    dst: /usr/bin/nordvpn
+    file_info:
+      mode: 0755
+  - src: build/root/usr/bin/nordvpnd
+    dst: /usr/bin/nordvpnd
+    file_info:
+      mode: 0755
+  - src: build/root/usr/lib/systemd/system/nordvpnd.service
+    dst: /usr/lib/systemd/system/nordvpnd.service
+  - src: build/root/usr/lib/sysusers.d/nordvpn.conf
+    dst: /usr/lib/sysusers.d/nordvpn.conf
+  - src: packaging/nordvpnd.toml
+    dst: /etc/nordvpn/nordvpnd.toml
+    type: config|noreplace
+  - src: build/root/usr/share/bash-completion/completions/nordvpn
+    dst: /usr/share/bash-completion/completions/nordvpn
+  - src: build/root/usr/share/zsh/site-functions/_nordvpn
+    dst: /usr/share/zsh/site-functions/_nordvpn
+  - src: build/root/usr/share/fish/vendor_completions.d/nordvpn.fish
+    dst: /usr/share/fish/vendor_completions.d/nordvpn.fish
+  - src: build/root/usr/share/licenses/nordvpn-linux/LICENSE
+    dst: /usr/share/licenses/nordvpn-linux/LICENSE
+scripts:
+  postinstall: packaging/scripts/postinstall.sh
+  preremove: packaging/scripts/preremove.sh
+  postremove: packaging/scripts/postremove.sh

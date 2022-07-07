@@ -1,0 +1,13 @@
+post_install() {
+  systemd-sysusers nordvpn.conf
+  echo ':: Start the daemon:         sudo systemctl enable --now nordvpnd'
+  echo ':: Allow your user access:   sudo usermod -aG nordvpn $USER  (then log in again)'
+}
+
+post_upgrade() {
+  systemd-sysusers nordvpn.conf
+}
+
+pre_remove() {
+  systemctl disable --now nordvpnd.service >/dev/null 2>&1 || true
+}

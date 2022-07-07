@@ -1,0 +1,24 @@
+# Maintainer: Priyansh Anand <pr1y4nsh@protonmail.com>
+pkgname=nordvpn-linux
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc='Unofficial, security-focused NordVPN client built on OpenVPN'
+arch=('any')
+url='https://github.com/priyansh-anand/nordvpn-linux'
+license=('GPL-3.0-only')
+depends=('python>=3.11' 'openvpn' 'systemd')
+makedepends=('make')
+backup=('etc/nordvpn/nordvpnd.toml')
+install=nordvpn-linux.install
+source=("$url/releases/download/v$pkgver/$pkgname-$pkgver.tar.gz")
+sha256sums=('@SHA256@')
+
+build() {
+  cd "$pkgname-$pkgver"
+  make pyz generated PREFIX=/usr BUILD_PYTHON=python
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  make install-files DESTDIR="$pkgdir" PREFIX=/usr
+}

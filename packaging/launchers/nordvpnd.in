@@ -1,0 +1,6 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-only
+# nordvpnd: the NordVPN daemon (started by systemd as root).
+# -I ignores PYTHON* environment variables, user site-packages and the current
+# directory, so nothing outside the installed zipapp can be imported.
+exec @PYTHON@ -I @LIBDIR@/nordvpn.pyz daemon "$@"

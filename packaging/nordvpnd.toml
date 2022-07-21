@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Configuration for nordvpnd. Every option is shown with its default value.
+# Restart the daemon after editing:  sudo systemctl restart nordvpnd
+
+# debug, info, warning or error. Logs go to the journal: journalctl -u nordvpnd
+log_level = "info"
+
+# Seconds to wait for a connection before giving up (1-300).
+connect_timeout = 30
+
+# Where the server list and OpenVPN configs come from (https:// only).
+api_base = "https://api.nordvpn.com"
+configs_base = "https://downloads.nordcdn.com"
+
+# DNS servers to use while connected (needs systemd-resolved).
+dns_servers = ["103.86.96.100", "103.86.99.100"]
+
+# The OpenVPN binary.
+openvpn = "/usr/sbin/openvpn"

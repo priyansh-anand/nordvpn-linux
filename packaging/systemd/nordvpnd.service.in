@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: GPL-3.0-only
+[Unit]
+Description=NordVPN daemon (unofficial, OpenVPN-based)
+Documentation=https://github.com/priyansh-anand/nordvpn-linux
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=exec
+ExecStart=@BINDIR@/nordvpnd
+Restart=on-failure
+RestartSec=2s
+# Root with group "nordvpn": the runtime directory and socket get the right group
+# without needing CAP_CHOWN, which the bounding set below drops.
+Group=nordvpn
+UMask=0077
+
+StateDirectory=nordvpn
+StateDirectoryMode=0700
+CacheDirectory=nordvpn
+CacheDirectoryMode=0700
+RuntimeDirectory=nordvpn
+RuntimeDirectoryMode=0750
+ConfigurationDirectory=nordvpn
+ConfigurationDirectoryMode=0755
+
+# OpenVPN needs CAP_NET_ADMIN to create the tun device and routes; nothing else.
+CapabilityBoundingSet=CAP_NET_ADMIN
+AmbientCapabilities=
+NoNewPrivileges=yes
+DevicePolicy=closed
+DeviceAllow=/dev/net/tun rw
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectProc=invisible
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# End-to-end stack: a fake NordVPN (real OpenVPN servers + fake API) and a systemd
+# client that installs the real .deb. Driven by tests/e2e/test_e2e.py via `make e2e`.
+name: nordvpn-e2e
+
+networks:
+  e2e:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
+volumes:
+  pki: {}
+
+services:
+  fakenord:
+    build: ./fakenord
+    cap_add: [NET_ADMIN]
+    devices: ["/dev/net/tun:/dev/net/tun"]
+    volumes: ["pki:/pki"]
+    networks:
+      e2e:
+        ipv4_address: 172.28.0.10
+        aliases: [api.fakenord.test, cdn.fakenord.test]
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1', 443), 1)"]
+      interval: 1s
+      retries: 90
+
+  client:
+    build: ./client
+    privileged: true
+    cgroup: private
+    tmpfs: [/run, /run/lock, /tmp]
+    volumes:
+      - pki:/pki:ro
+      - ../../dist:/dist:ro
+    networks:
+      e2e:
+        ipv4_address: 172.28.0.20
+    depends_on:
+      fakenord:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "systemctl", "is-active", "--quiet", "e2e-trust.service", "systemd-resolved.service"]
+      interval: 1s
+      retries: 120

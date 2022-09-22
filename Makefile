@@ -26,7 +26,7 @@ define inst
 endef
 
 .PHONY: help dev lint shellcheck fmt typecheck test check pyz generated install-files install \
-	uninstall packages deb stage dist-tarball clean
+	uninstall packages deb stage e2e dist-tarball clean
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -113,6 +113,9 @@ deb: ## Build only the .deb (used by the e2e tests)
 	$(MAKE) stage
 	docker run --rm -e VERSION=$(VERSION) -v "$(CURDIR):/src" -w /src $(NFPM_IMAGE) \
 		package --config packaging/nfpm.yaml --packager deb --target $(DIST)/
+
+e2e: deb ## End-to-end tests in Docker (E2E_KEEP=1 keeps the stack running)
+	$(UV) run pytest -m e2e tests/e2e -v
 
 stage:
 	rm -rf build/root

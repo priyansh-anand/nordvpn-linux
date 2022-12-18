@@ -1,3 +1,5 @@
+Note: I created this project to learn programming. I currently use `networkmanager-openvpn` with Gnome to manage VPNs from the GUI, hence archiving this repo.
+
 ![RepositoryBanner](https://i.imgur.com/LWbfiUO.png)
 
 [![Stargazers][stars-shield]][stars-url]

@@ -1,169 +1,141 @@
-![RepositoryBanner](https://i.imgur.com/LWbfiUO.png)
+# nordvpn-linux
 
-[![Stargazers][stars-shield]][stars-url]
-[![Forks][forks-shield]][forks-url]
-[![Contributors][contributors-shield]][contributors-url]
-[![Issues][issues-shield]][issues-url]
-[![GPLMIT License][license-shield]][license-url]
+An unofficial, security-focused NordVPN client for Linux, built on OpenVPN.
 
-# NordVPN Linux Client [Unofficial]
+```console
+$ nordvpn connect us
+Connected to us12941 (United States).
+$ nordvpn status
+Status:     Connected
+Server:     us12941 (United States)
+Protocol:   UDP
+Remote IP:  187.15.89.138
+Uptime:     4m 12s
+Traffic:    38.2 MiB received, 2.1 MiB sent
+DNS:        NordVPN DNS (systemd-resolved)
+```
 
-The original NordVPN Linux client sucks, so I decided to make an open-source linux client for NordVPN based on OpenVPN. This client manages the openvpn configuration files and authentication, along with connection. It has not all the commands that are provided with the official NordVPN client (kill-switch etc.), but they will be added in future.
+- **Least privilege.** A small root daemon (`nordvpnd`) runs OpenVPN. It accepts only a country or server *name* from members of the `nordvpn` group, and it runs under a hardened systemd unit.
+- **No blind trust in downloaded configs.** Every `.ovpn` is checked against an allowlist of OpenVPN directives before it runs, so a tampered config can't run commands as root.
+- **Load-aware server choice.** Servers come from NordVPN's recommendations API, not picked at random.
+- **DNS goes through the tunnel**, via systemd-resolved.
+- **No third-party Python dependencies.**
 
-## Requires
+> Not affiliated with Nord Security. "NordVPN" is a trademark of its owner.
 
-* [Python-3.6+](https://python.org)
+## Requirements
 
-  ```sh
-    $ sudo apt install python3
-    # or
-    $ sudo pacman -S python3
-  ```
+- Linux with systemd
+- Python 3.11 or newer
+- OpenVPN 2.5 or newer (2.6 recommended)
+- systemd-resolved (recommended; without it, DNS queries do not go through the VPN)
 
-* [OpenVPN](https://openvpn.net)
+Supported: Debian 12+, Ubuntu 24.04+, Fedora 39+, Arch Linux.
 
-  ```sh
-      $ sudo apt install openvpn
-      # or
-      $ sudo pacman -S openvpn
-  ```
+## Install
 
-* Unzip
-
-  ```sh
-      $ sudo apt install unzip
-      # or
-      $ sudo pacman -S unzip
-  ```
-
-## Installation
-
-To get a local copy up and running follow these simple steps.
-
-1. Clone the repository to your machine and change directory
-
-  ```sh
-    $ git clone https://github.com/priyansh-anand/nordvpn-linux.git
-    $ cd nordvpn-linux
-  ```
-
-2. Install the nordvpn client and sync the ovpn files
-
-  ```sh
-    $ sudo ./install.sh
-      [*] Installing NordVPN Linux Client [Unofficial]
-      [*] Copying python scripts to /opt/nvpn/bin
-      [+] Installing required python packages
-      [*] Copying configuration files to /opt/nvpn/config
-      [+] Creating login file at /opt/nvpn/login
-      [*] Settings permissions for directories
-      [+] Installing and enabling nvpn-deamon.service
-      [+] Adding nordvpn & nvpn to path
-      [+] NordVPN Linux Client successfully installed
-
-    $ nordvpn sync-ovpn
-      [+] NordVPN .ovpn files downloaded & extracted
-  ```
-
-## Uninstallation
-
-It's just one command away from uninstallation
+Download the package for your distribution from the [latest release](https://github.com/priyansh-anand/nordvpn-linux/releases/latest) and verify it against `SHA256SUMS`:
 
 ```sh
-  $ sudo ./uninstall.sh
-    [*] Uninstalling NordVPN Linux Client [Unofficial]
-    [*] Removing /opt/nvpn/bin
-    [+] Removing nvpn from path
-    [+] Disabling and removing nvpn-deamon.service
-    [+] NordVPN Linux Client successfully uninstalled
+# Debian / Ubuntu
+sudo apt install ./nordvpn-linux_2.0.0-1_all.deb
+# Fedora
+sudo dnf install ./nordvpn-linux-2.0.0-1.noarch.rpm
+# Arch Linux
+sudo pacman -U ./nordvpn-linux-2.0.0-1-any.pkg.tar.zst && sudo systemctl enable --now nordvpnd
 ```
+
+Or build from source:
+
+```sh
+git clone https://github.com/priyansh-anand/nordvpn-linux.git
+cd nordvpn-linux
+sudo make install            # PREFIX=/usr/local and DESTDIR=... are supported
+```
+
+Then allow your user to control the daemon, and log out and back in:
+
+```sh
+sudo usermod -aG nordvpn "$USER"
+```
+
+## Log in
+
+OpenVPN needs your NordVPN **service credentials**, which are *not* your account email and password. To find them, go to [Nord Account](https://my.nordaccount.com), open **NordVPN**, choose **Set up NordVPN manually**, and look under **Service credentials**. Then run:
+
+```sh
+nordvpn login
+# or, non-interactively:
+printf '%s\n' "$PASSWORD" | nordvpn login --username "$USERNAME" --password-stdin
+```
+
+The daemon stores the credentials in `/var/lib/nordvpn/credentials`, readable only by root.
 
 ## Usage
 
-Binary name : ```nordvpn``` or ```nvpn```
+| Command | What it does |
+|---|---|
+| `nordvpn connect` (`c`) | Connect to the recommended server nearest to you |
+| `nordvpn connect us` | Connect to the best server in a country (code or name: `"united kingdom"`, `uk`, `gb`) |
+| `nordvpn connect us1234` | Connect to a specific server |
+| `nordvpn disconnect` (`d`) | Disconnect |
+| `nordvpn status` (`s`) | Show the connection, traffic and DNS state (`--json` for scripts) |
+| `nordvpn countries` | List countries (`--plain` for codes only, `--json`) |
+| `nordvpn settings` | Show settings |
+| `nordvpn set protocol tcp` | Use OpenVPN over TCP (`udp` is the default) |
+| `nordvpn set dns off` | Keep the system DNS while connected (not recommended) |
+| `nordvpn logout` | Disconnect and forget the credentials |
 
-You always use ```help``` to get all the supported commands.
+Exit codes, for scripts:
 
-Commands supported:
+| Code | Meaning |
+|---|---|
+| 0 | success |
+| 1 | error |
+| 2 | bad usage or unknown country/server |
+| 3 | daemon not running |
+| 4 | not logged in, or credentials rejected |
+| 5 | not in the `nordvpn` group |
+| 130 | cancelled |
 
-* connect, c [country/server]: Connects you to NordVPN, if you don't provide a server/country, then it will automatically connect to closest one.
+Tab completion is installed for bash, zsh and fish.
 
-  ```sh
-  $ nordvpn c
-    [*] Closest country: India
-    [*] Connected to NordVPN[IN96]
+## Configuration
 
-  $ nordvpn c us
-    [*] Connected to NordVPN[US6471]
-  ```
+`/etc/nordvpn/nordvpnd.toml` documents every option (log level, connect timeout, DNS servers, OpenVPN path). After editing it, run `sudo systemctl restart nordvpnd`.
 
-* disconnect, d: Disconnects you from NordVPN
+## Troubleshooting
 
-  ```sh
-  $ nordvpn d
-    [*] Disconnected from NordVPN
-  ```
+- **`nordvpn: permission denied`**: run `sudo usermod -aG nordvpn "$USER"`, then log out and back in.
+- **`cannot reach the NordVPN daemon`**: check `systemctl status nordvpnd`.
+- **Anything else**: the daemon and OpenVPN both log to the journal: `journalctl -u nordvpnd -e`.
+- **`status` says DNS is "not protected"**: install and enable systemd-resolved (`sudo systemctl enable --now systemd-resolved`).
 
-* status, s: Get the current status of NordVPN connection
+## Uninstall
 
-  ```sh
-  $ nordvpn s
-    [+] You're connected to NordVPN[US7813]
-  ```
+Remove the package (`sudo apt remove nordvpn-linux`, `dnf remove`, `pacman -R`), or run `sudo make uninstall` for source installs. `/etc/nordvpn`, `/var/lib/nordvpn` and the `nordvpn` group are kept. Delete them by hand if you want them gone.
 
-* login: Logs you in to NordVPN
+## Upgrading from 1.x
 
-  ```sh
-  $ nordvpn login
-    [*] Enter email: pr1y4nsh@protonmail.com
-    [*] Enter password: **********
-    [+] Saved login information, you can connect to NordVPN now
-  ```
+Version 2 is a rewrite and shares nothing with 1.x. Remove 1.x first:
 
-* logout: Logs you out from NordVPN
+```sh
+sudo systemctl disable --now nordvpn-deamon.service
+sudo rm -f /etc/systemd/system/nordvpn-deamon.service /bin/nordvpn /bin/nvpn
+sudo rm -rf /opt/nordvpn
+sed -i '/nvpn_completion.sh/d' ~/.bashrc
+```
 
-  ```sh
-  $ nordvpn logout
-    [+] Logged out from NordVPN
-  ```
+1.x stored your password in a world-readable file (`/opt/nordvpn/login`). If you used it on a shared machine, change your NordVPN password.
 
-* sync-ovpn: Syncs the .ovpn files from NordVPN server
-  You need to run this before connecting to NordVPN the first time or to update the NordVPN servers list
+## Security
 
-  ```sh
-    $ nordvpn sync-ovpn
-      [+] NordVPN .ovpn files downloaded & extracted
-  ```
-
-* help: Shows this info on terminal
+See [SECURITY.md](SECURITY.md) for the threat model and how to report a vulnerability privately.
 
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+See [CONTRIBUTING.md](CONTRIBUTING.md). The design is described in [docs/architecture.md](docs/architecture.md).
 
 ## License
 
-Distributed under the GPL License. See `LICENSE` for more information.
-
-## Contact
-
-Priyansh Anand -  pr1y4nsh@protonmail.com
-
-Project Link: [https://github.com/priyansh-anand/nordvpn-linux](https://github.com/priyansh-anand/nordvpn-linux)
-
-[contributors-shield]: https://img.shields.io/github/contributors/priyansh-anand/nordvpn-linux.svg?style=for-the-badge
-[contributors-url]: https://github.com/priyansh-anand/nordvpn-linux/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/priyansh-anand/nordvpn-linux.svg?style=for-the-badge
-[forks-url]: https://github.com/priyansh-anand/nordvpn-linux/network/members
-[stars-shield]: https://img.shields.io/github/stars/priyansh-anand/nordvpn-linux.svg?style=for-the-badge
-[stars-url]: https://github.com/priyansh-anand/nordvpn-linux/stargazers
-[issues-shield]: https://img.shields.io/github/issues/priyansh-anand/nordvpn-linux.svg?style=for-the-badge
-[issues-url]: https://github.com/priyansh-anand/nordvpn-linux/issues
-[license-shield]: https://img.shields.io/github/license/priyansh-anand/nordvpn-linux.svg?style=for-the-badge
-[license-url]: https://github.com/priyansh-anand/nordvpn-linux/blob/master/LICENSE.txt
+[GPL-3.0-only](LICENSE)

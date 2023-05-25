@@ -230,3 +230,32 @@ async def test_a_broken_listener_does_not_break_the_tunnel(short_tmp: Path) -> N
     remove()  # removing twice is harmless
     assert tunnel.state is TunnelState.CONNECTED
     await tunnel.stop()
+
+
+async def test_cancelled_stop_still_disconnects(short_tmp: Path) -> None:
+    # Ctrl-C on `nordvpn disconnect` while OpenVPN is exiting must not leave the
+    # daemon claiming CONNECTED with no tunnel behind it.
+    tunnel, log, _ = make_tunnel(short_tmp, "slow_stop")
+    await connect(tunnel, short_tmp)
+    stopping = asyncio.create_task(tunnel.stop())
+    await asyncio.sleep(0.3)  # OpenVPN is now taking its time to exit
+    stopping.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await stopping
+    await eventually(lambda: tunnel.state is TunnelState.DISCONNECTED)
+    assert not tunnel.active
+    await eventually(lambda: all_exited(log))
+
+
+async def test_stop_waits_for_a_background_failure_teardown(short_tmp: Path) -> None:
+    # OpenVPN reports a fatal error while connected and takes a second to exit; a
+    # disconnect arriving meanwhile must wait for it and keep the error visible.
+    tunnel, log, _ = make_tunnel(short_tmp, "fatal_after_connect")
+    await connect(tunnel, short_tmp)
+    await asyncio.sleep(0.3)  # the background teardown is waiting for OpenVPN to exit
+    await tunnel.stop()
+    assert all_exited(log)
+    last_error = tunnel.snapshot().last_error
+    assert last_error is not None
+    assert last_error.code is ErrorCode.TUNNEL_FAILED
+    assert tunnel.state is TunnelState.DISCONNECTED

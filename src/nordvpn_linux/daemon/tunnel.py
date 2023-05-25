@@ -126,6 +126,7 @@ class Tunnel:
         self._credentials: Credentials | None = None
         self._outcome: asyncio.Future[None] | None = None
         self._stopping = False
+        self._teardown_task: asyncio.Task[None] | None = None
 
     @property
     def state(self) -> TunnelState:
@@ -178,28 +179,28 @@ class Tunnel:
             timed_out = NordVPNError(
                 ErrorCode.TIMEOUT, f"no connection to {server} after {timeout:g}s"
             )
-            await self._fail(timed_out)
+            await self._teardown(timed_out)
             raise timed_out from None
         except asyncio.CancelledError:
-            await self._fail(
+            await self._teardown(
                 NordVPNError(ErrorCode.CANCELLED, "the connection attempt was cancelled")
             )
             raise
         except NordVPNError as error:
-            await self._fail(error)
+            await self._teardown(error)
             raise
         except OSError as exc:
             not_started = NordVPNError(ErrorCode.TUNNEL_FAILED, f"cannot start OpenVPN: {exc}")
-            await self._fail(not_started)
+            await self._teardown(not_started)
             raise not_started from exc
 
     async def stop(self) -> None:
-        """Stop OpenVPN if it is running and return to DISCONNECTED."""
-        if not self.active:
-            return
-        await self._cleanup()
-        self._info = TunnelInfo()
-        self._emit(TunnelState.DISCONNECTED, "disconnected")
+        """Stop OpenVPN if it is running and return to DISCONNECTED.
+
+        If a teardown is already under way (for example after OpenVPN reported a
+        fatal error), this waits for it instead of starting another.
+        """
+        await self._teardown(None)
 
     async def _start(self, config: Path, outcome: asyncio.Future[None]) -> None:
         self._management_socket.unlink(missing_ok=True)  # left behind by a crash
@@ -297,17 +298,39 @@ class Tunnel:
             return
         if self._outcome is not None and not self._outcome.done():
             self._outcome.set_exception(error)  # connect() is waiting and will clean up
-        elif self.state in _UP:
+        elif self.state in _UP and self._teardown_task is None:
             self._stopping = True
-            self._spawn(self._fail(error))  # nobody is waiting: tear down in the background
+            # Nobody is waiting on this tunnel: tear it down in the background.
+            self._teardown_task = asyncio.create_task(self._run_teardown(error))
 
-    async def _fail(self, error: NordVPNError) -> None:
-        log.warning("tunnel failed: %s", error.message)
-        await self._cleanup()
-        self._info = replace(self._info, state=TunnelState.FAILED, last_error=error)
-        self._emit(TunnelState.FAILED, error.message)
-        self._info = TunnelInfo(last_error=error)
-        self._emit(TunnelState.DISCONNECTED, error.message)
+    async def _teardown(self, error: NordVPNError | None) -> None:
+        """Stop OpenVPN and settle the state, even if the caller is cancelled meanwhile.
+
+        The work runs in its own task and callers await it through a shield, so
+        a cancelled caller (a client pressing Ctrl-C) cannot leave the tunnel
+        half torn down with a state that claims it is still connected.
+        """
+        if self._teardown_task is None:
+            if not self.active:
+                return
+            self._teardown_task = asyncio.create_task(self._run_teardown(error))
+        await asyncio.shield(self._teardown_task)
+
+    async def _run_teardown(self, error: NordVPNError | None) -> None:
+        try:
+            if error is not None:
+                log.warning("tunnel failed: %s", error.message)
+            await self._cleanup()
+            if error is None:
+                self._info = TunnelInfo()
+                self._emit(TunnelState.DISCONNECTED, "disconnected")
+            else:
+                self._info = replace(self._info, state=TunnelState.FAILED, last_error=error)
+                self._emit(TunnelState.FAILED, error.message)
+                self._info = TunnelInfo(last_error=error)
+                self._emit(TunnelState.DISCONNECTED, error.message)
+        finally:
+            self._teardown_task = None
 
     async def _cleanup(self) -> None:
         self._stopping = True
@@ -320,8 +343,7 @@ class Tunnel:
         self._outcome = None
         if proc is not None and proc.returncode is None:
             await _terminate(proc, mgmt)
-        current = asyncio.current_task()
-        tasks = [task for task in self._tasks if task is not current]
+        tasks = list(self._tasks)  # the process watcher and management reader
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)

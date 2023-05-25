@@ -12,6 +12,8 @@ the scenario named by FAKE_OPENVPN_SCENARIO:
   exit_early           exit before opening the management socket
   crash_after_connect  connect, then die
   reconnect            connect, report RECONNECTING, then CONNECTED again
+  slow_stop            like ok, but take a second to exit after SIGTERM
+  fatal_after_connect  connect, report a fatal error, then exit a second later
 
 Expected credentials come from FAKE_OPENVPN_USER and FAKE_OPENVPN_PASS. If
 FAKE_OPENVPN_LOG is set, a JSON line {"pid": ..., "argv": [...]} is appended to it.
@@ -48,6 +50,8 @@ class Session:
         if words[:2] == ["signal", "SIGTERM"]:
             self.send("SUCCESS: signal SIGTERM thrown")
             self.state("EXITING", "SIGTERM")
+            if self.scenario == "slow_stop":
+                time.sleep(1)
             raise SystemExit(0)
         self.send(f"SUCCESS: {words[0] if words else ''} done")
         return words
@@ -88,6 +92,10 @@ class Session:
         self.state("ASSIGN_IP", local="10.8.0.2")
         self.state("CONNECTED", "SUCCESS", "10.8.0.2", "203.0.113.7")
         self.send(">BYTECOUNT:1024,2048")
+        if self.scenario == "fatal_after_connect":
+            self.send(">FATAL:Connection reset, restarting")
+            time.sleep(1)
+            return 1
         if self.scenario == "crash_after_connect":
             time.sleep(0.2)
             os._exit(1)

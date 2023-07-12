@@ -26,6 +26,7 @@ class Recorder:
 
     def __init__(self) -> None:
         self.cancelled = asyncio.Event()
+        self.finished = asyncio.Event()
         self.requests: list[Request] = []
 
     async def handle(self, request: Request, emit: EventSink) -> JSONObject:
@@ -41,6 +42,10 @@ class Recorder:
                 raise RuntimeError("bug")
             case "huge":
                 return {"blob": "x" * 70_000}
+            case "slow":
+                await asyncio.sleep(0.3)
+                self.finished.set()
+                return {}
             case "hang":
                 try:
                     await asyncio.Event().wait()
@@ -198,10 +203,10 @@ async def test_sequential_requests_on_one_connection(short_tmp: Path) -> None:
         writer.close()
 
 
-async def test_hangup_cancels_the_request(short_tmp: Path) -> None:
+async def test_hangup_cancels_a_connect(short_tmp: Path) -> None:
     async with serving(short_tmp) as (_, recorder, path):
         _, writer = await asyncio.open_unix_connection(path)
-        writer.write(req(do="hang"))
+        writer.write(req("connect", do="hang"))
         await writer.drain()
         await asyncio.sleep(0.1)
         writer.close()
@@ -235,3 +240,16 @@ async def test_close_cancels_requests_and_removes_the_socket(short_tmp: Path) ->
         assert recorder.cancelled.is_set()
         assert not path.exists()
         writer.close()
+
+
+@pytest.mark.parametrize("cmd", ["disconnect", "logout", "login", "settings.set"])
+async def test_hangup_does_not_cancel_other_requests(short_tmp: Path, cmd: str) -> None:
+    # An interrupted `nordvpn logout` must still forget the credentials, and an
+    # interrupted disconnect must still disconnect.
+    async with serving(short_tmp) as (_, recorder, path):
+        _, writer = await asyncio.open_unix_connection(path)
+        writer.write(req(cmd, do="slow"))
+        await writer.drain()
+        writer.close()
+        await asyncio.wait_for(recorder.finished.wait(), 2)
+        assert not recorder.cancelled.is_set()

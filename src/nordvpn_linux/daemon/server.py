@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """The daemon's Unix-socket server: framing, peer authorization and dispatch.
 
-A connection carries sequential requests. While a request runs, the server
+A connection carries sequential requests. While a ``connect`` runs, the server
 watches the connection: if the client hangs up (for example on Ctrl-C), the
-request is cancelled. Clients must not send anything else before the response.
+attempt is cancelled. Every other command runs to completion regardless, so an
+interrupted ``logout`` still forgets the credentials. Clients must not send
+anything else before the response.
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ from nordvpn_linux.daemon.peercred import Authorizer, get_peer_uid
 from nordvpn_linux.errors import ErrorCode, NordVPNError
 from nordvpn_linux.protocol import (
     MAX_MESSAGE_BYTES,
+    Command,
     Event,
     JSONObject,
     Request,
@@ -34,6 +37,7 @@ from nordvpn_linux.protocol import (
 log = logging.getLogger(__name__)
 
 EventSink = Callable[[str, str], None]  # (state, detail)
+CANCEL_ON_HANGUP = frozenset({Command.CONNECT})
 
 
 class Dispatcher(Protocol):
@@ -183,15 +187,16 @@ class Server:
                 writer.write(encode(Event(request.id, state, detail)))
 
         handler = asyncio.create_task(self._dispatcher.handle(request, emit))
-        hangup = asyncio.create_task(reader.read(1))
-        both: set[asyncio.Task[Any]] = {handler, hangup}
+        watched: set[asyncio.Task[Any]] = {handler}
+        if request.cmd in CANCEL_ON_HANGUP:
+            watched.add(asyncio.create_task(reader.read(1)))
         try:
-            await asyncio.wait(both, return_when=asyncio.FIRST_COMPLETED)
+            await asyncio.wait(watched, return_when=asyncio.FIRST_COMPLETED)
         finally:
-            for task in (handler, hangup):
+            for task in watched:
                 if not task.done():
                     task.cancel()
-            await asyncio.gather(handler, hangup, return_exceptions=True)
+            await asyncio.gather(*watched, return_exceptions=True)
         if handler.cancelled():
             return None
         error = handler.exception()

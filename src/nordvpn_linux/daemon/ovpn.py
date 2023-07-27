@@ -5,6 +5,10 @@ The daemon runs OpenVPN as root, and an OpenVPN config can run arbitrary command
 (``up``, ``plugin``, ``tls-verify`` ...). Instead of trying to list every dangerous
 directive in every OpenVPN version, we accept only the directives NordVPN's configs
 actually use. Anything unknown fails closed.
+
+Lines are split the way OpenVPN splits them (on ``\n`` only), and any other
+control character or non-ASCII character is rejected, so the validator can never
+see different lines from the ones OpenVPN will run.
 """
 
 from __future__ import annotations
@@ -73,9 +77,9 @@ def validate_config(text: str, hostname: str) -> str:
     block: str | None = None
     remotes = 0
     line_no = 0
-    for line_no, raw in enumerate(text.splitlines(), start=1):
-        if "\x00" in raw:
-            raise InvalidConfigError(line_no, "NUL byte")
+    for line_no, raw in enumerate(text.split("\n"), start=1):
+        raw = raw.removesuffix("\r")  # CRLF line endings
+        _check_characters(line_no, raw)
         line = raw.strip()
         if block is not None:
             if line == f"</{block}>":
@@ -102,6 +106,16 @@ def validate_config(text: str, hostname: str) -> str:
     if remotes == 0:
         raise InvalidConfigError(line_no, "config has no 'remote' directive")
     return text
+
+
+def _check_characters(line_no: int, raw: str) -> None:
+    for ch in raw:
+        if ch == "\x00":
+            raise InvalidConfigError(line_no, "NUL byte")
+        if not ch.isascii():
+            raise InvalidConfigError(line_no, f"non-ASCII character {ch!r}")
+        if (ch < " " and ch != "\t") or ch == "\x7f":
+            raise InvalidConfigError(line_no, f"control character {ch!r}")
 
 
 def _check_arguments(line_no: int, directive: str, args: list[str], fqdn: str) -> None:

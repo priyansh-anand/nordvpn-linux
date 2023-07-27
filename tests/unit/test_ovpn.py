@@ -99,3 +99,20 @@ def test_nul_byte_is_rejected() -> None:
 def test_remote_by_hostname_is_allowed() -> None:
     text = "client\nremote us1.nordvpn.com 443 tcp\n"
     assert validate_config(text, "us1") == text
+
+
+@pytest.mark.parametrize(
+    "separator", ["\r", "\v", "\f", "\x1c", "\x1d", "\x1e", "\x85", "\u2028", "\u2029"]
+)
+def test_lines_are_split_like_openvpn_does(separator: str) -> None:
+    # OpenVPN only breaks lines on "\n". str.splitlines() also breaks on these, which
+    # would let a comment line hide "<ca>" and smuggle the directives after it.
+    smuggled = f"# note{separator}<ca>\nup /tmp/x.sh\n</ca>\n"
+    with pytest.raises(InvalidConfigError):
+        validate_config(REAL_UDP + smuggled, "us12941")
+
+
+@pytest.mark.parametrize("bad", ["\x07", "\x1b[31m", "\x7f", "é"])
+def test_control_and_non_ascii_characters_are_rejected(bad: str) -> None:
+    with pytest.raises(InvalidConfigError):
+        validate_config(f"client\nremote 1.2.3.4 1194\n# {bad}\n", "us1")

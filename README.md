@@ -23,6 +23,10 @@ DNS:        NordVPN DNS (systemd-resolved)
 
 > Not affiliated with Nord Security. "NordVPN" is a trademark of its owner.
 
+## History
+
+This project started in March 2021, two years before NordVPN open-sourced its own Linux client ([NordSecurity/nordvpn-linux](https://github.com/NordSecurity/nordvpn-linux), published in 2023). Back then the official client was closed source, so this was written as an open alternative built on plain OpenVPN. Version 2 is a ground-up rewrite that keeps that goal: a small, auditable client with a narrow privileged core.
+
 ## Requirements
 
 - Linux with systemd

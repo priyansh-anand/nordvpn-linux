@@ -45,7 +45,7 @@ packages = ["src/nordvpn_linux"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-# The plan/spec contain example code blocks; ruff >= 0.15 would format them.
+# ruff >= 0.15 also formats Python code blocks inside Markdown; leave docs alone.
 extend-exclude = ["docs"]
 
 [tool.ruff.lint]
